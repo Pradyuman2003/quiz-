@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Website</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #leaderboard, #profile, #quiz-section { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Quiz Website</h1>
+    <section id="auth-section">
+        <h2>Register / Login</h2>
+        <input id="username" placeholder="Username" />
+        <input id="password" type="password" placeholder="Password" />
+        <button onclick="register()">Register</button>
+        <button onclick="login()">Login</button>
+        <p id="auth-message"></p>
+    </section>
+    <section id="quiz-section" style="display: none;">
+        <h2>Take a Quiz</h2>
+        <button onclick="submitQuiz()">Submit Quiz</button>
+    </section>
+    <section id="leaderboard" style="display: none;">
+        <h2>Leaderboard</h2>
+        <ul id="leaderboard-list"></ul>
+    </section>
+    <section id="profile" style="display: none;">
+        <h2>Your Profile</h2>
+        <p id="profile-info"></p>
+    </section>
+
+    <script>
+        let currentUser = null;
+        const API_URL = "https://your-backend-url.onrender.com";
+
+        async function register() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const response = await fetch(`${API_URL}/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            document.getElementById("auth-message").innerText = data.message;
+        }
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const response = await fetch(`${API_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            document.getElementById("auth-message").innerText = data.message;
+            if (response.ok) {
+                currentUser = username;
+                document.getElementById("quiz-section").style.display = "block";
+                fetchLeaderboard();
+                fetchProfile();
+            }
+        }
+
+        async function submitQuiz() {
+            const score = Math.floor(Math.random() * 10) + 1;
+            const response = await fetch(`${API_URL}/quiz`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: currentUser, score, totalQuestions: 10 })
+            });
+            const data = await response.json();
+            alert(`Quiz submitted! Your accuracy: ${data.accuracy}%`);
+            fetchLeaderboard();
+            fetchProfile();
+        }
+
+        async function fetchLeaderboard() {
+            const response = await fetch(`${API_URL}/leaderboard`);
+            const leaderboard = await response.json();
+            const leaderboardList = document.getElementById("leaderboard-list");
+            leaderboardList.innerHTML = "";
+            leaderboard.forEach((user) => {
+                leaderboardList.innerHTML += `<li>${user.username}: ${user.score} points, Accuracy: ${user.accuracy}%</li>`;
+            });
+            document.getElementById("leaderboard").style.display = "block";
+        }
+
+        async function fetchProfile() {
+            const response = await fetch(`${API_URL}/profile/${currentUser}`);
+            const profile = await response.json();
+            document.getElementById("profile-info").innerText = `Username: ${profile.username}, Attempts: ${profile.attempts}, Accuracy: ${profile.accuracy.toFixed(2)}%`;
+            document.getElementById("profile").style.display = "block";
+        }
+    </script>
+</body>
+</html>
+        
